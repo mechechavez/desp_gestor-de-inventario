@@ -604,7 +604,7 @@ npm test
 
 ```bash
 # Clonar tu fork
-git clone https://github.com/tu-usuario/gestor-de-inventario.git
+git clone https://github.com/mechechavez/desp_gestor-de-inventario.git
 cd gestor-de-inventario
 
 # Instalar dependencias
