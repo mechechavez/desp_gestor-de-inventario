@@ -1,0 +1,76 @@
+services:
+  # Servicio Backend (API Node.js/Express)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "5000:5000"   # Puerto para la API REST
+    env_file:
+      - ./.env
+    networks:
+      - app-network
+    depends_on:
+      - mongo  # Depende de la base de datos MongoDB
+    restart: always
+
+  # Servicio Frontend (React/Vite con Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"  # Puerto para la aplicación web
+    depends_on:
+      - backend  # Depende del backend
+    networks:
+      - app-network
+    restart: always
+
+  # Servicio de base de datos (MongoDB)
+  mongo:
+    image: mongo:7.0
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS}
+    ports:
+      - "27017:27017"  # Puerto MongoDB
+    volumes:
+      - mongodb_data:/data/db  # Persistencia de datos
+      - ./mongodb/init:/docker-entrypoint-initdb.d  # Scripts de inicialización
+    networks:
+      - app-network
+    env_file:
+      - ./.env
+
+  # Servicio de administración de MongoDB (Mongo Express)
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"  # Puerto para interfaz web de administración
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASS}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASS}
+    depends_on:
+      - mongo  # Depende de MongoDB
+    networks:
+      - app-network
+    env_file:
+      - ./.env
+
+# Red personalizada para comunicación entre contenedores
+networks:
+  app-network:
+    driver: bridge
+
+# Volúmenes para persistir los datos de la base de datos
+volumes:
+  mongodb_data:
